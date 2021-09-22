@@ -1,0 +1,32 @@
+
+## https://cloud.google.com/run/docs/quickstarts/events
+
+
+/home/ronaldo/python_projects/python-conv-tran
+
+docker build -t ronaldofreitas/conv-tran .
+( ou docker build --no-cache -t ronaldofreitas/conv-tran . )
+
+pega o ID da imagem... docker images
+
+docker tag 9d6c50143cbf gcr.io/catalobyte-311413/catalobyte/conv-tran && docker push gcr.io/catalobyte-311413/catalobyte/conv-tran
+
+
+
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////
+
+
+padrão do arquivo
+
+UID-FIREBASE/abw2k3kf4-123456789.flac
+
+abw2k3kf4 = no da tabela do manticore
+123456789 = datetime para evitar sobrescrever
+
+upload --> trigger --> fila --> conv-tran --> trigger --> speech --> manticore

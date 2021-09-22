@@ -1,0 +1,138 @@
+
+
+https://to-speech-fto3qmyctq-ue.a.run.app
+
+
+bucket: 'web-foidito-converted', 
+contentType: 'application/octet-stream', 
+
+generation: '1618762686333624', 
+id: 'web-foidito-converted/GDfGlDknYsdN0e4Cc06zOJ5xmta2/7qg4aseguqMw/16184120599.flac/1618762686333624',
+
+mediaLink: 'https://www.googleapis.com/download/storage/v1/b/web-foidito-converted/o/GDfGlDknYsdN0e4Cc06zOJ5xmta2%2F7qg4aseguqMw%2F16184120599.flac?generation=1618762686333624&alt=media', 
+name: 'GDfGlDknYsdN0e4Cc06zOJ5xmta2/7qg4aseguqMw/16184120599.flac', 
+size: '5467654', 
+selfLink: 'https://www.googleapis.com/storage/v1/b/web-foidito-converted/o/GDfGlDknYsdN0e4Cc06zOJ5xmta2%2F7qg4aseguqMw%2F16184120599.flac', 
+
+ 
+ 
+
+// executa toda vez que um upload de arquivo ZIP chega no bucket 'uploads-zipados'
+const {CloudTasksClient} = require('@google-cloud/tasks');
+const clientTask = new CloudTasksClient();
+const CryptoJS = require("crypto-js");
+const secretHash = 'Y4G53$5d4sa<!54sa';// << ATENÇÃO, é a mesma presente no React front >>
+exports.toQueueToConvert = async (event, context) => {
+  const project = 'foidito-1612614792460';
+  const queue = 'send-to-convert';
+  const location = 'us-east1';
+  const parent = clientTask.queuePath(project, location, queue);
+  const serviceAccountEmail = 'foidito-credentials-1@foidito-1612614792460.iam.gserviceaccount.com';
+  const fullpath = event.name;// folder/file
+  var separate = fullpath.split("/");
+  var foldername = separate[0];// folder = firebase-uuid
+  var filename = separate[1];// file
+  //var arquivo_path = filename.replace("@", "/");// substitui marcardor gerado no react front
+  //var fnam = arquivo_path.split(".");
+  var real_name = Buffer.from(filename, 'base64').toString('binary');//atob
+  var fnam = real_name.split(".");
+  var bytes = CryptoJS.AES.decrypt(fnam[0], secretHash);
+  var metaFile = bytes.toString(CryptoJS.enc.Utf8);
+  
+
+  console.log(`
+  ------------------------------------------------------------------------------
+
+  filename === ${filename}
+  metaFile === ${metaFile}
+
+  real_name ---> ${real_name}
+
+  ------------------------------------------------------------------------------
+  `)
+  if(metaFile){
+    console.log(' SSSIIIIIIIIIIMMMMMMMMMMM')
+    //console.log(metaFile); // 7qg4aseguqMw-1618686048393 
+    var index_manti = metaFile.split("-");
+    const payload = {
+      gs_uri: `gs://${event.bucket}/${event.name}`, //gs://web-foidito/GDfGlDknYsdN0e4Cc06zOJ5xmta2/U2FsdGVkX19E1GI7llSZww5L0KFXUpiZ2FYJoo77cUi8Ixhv2mzvOrwRdkSQj2gW.opus
+      index_manticore: index_manti[0],// 7qg4aseguqMw
+      foldername
+    }
+    const task = {
+      httpRequest: {
+        httpMethod: 'POST',
+        url: 'https://conv-tran-fto3qmyctq-ue.a.run.app',// url de destino de entrega, onde será feito o unzip do arquivo
+        oidcToken: {
+          serviceAccountEmail,
+        },
+        body: Buffer.from(JSON.stringify(payload)).toString('base64'),
+        headers: {
+          //'content-type': 'application/octet-stream'
+          'content-type': 'application/json'
+        }
+      },
+    };
+    const requestTask = {parent, task};
+    await clientTask.createTask(requestTask);
+  }else{
+    console.log('erro metaFile')
+    return
+  }
+};
+
+
+{
+  "name": "sample-cloud-storage",
+  "version": "0.0.1",
+  "dependencies": {
+    "@google-cloud/storage": "^5.7.4",
+    "@google-cloud/tasks": "^2.3.0",
+    "crypto-js": "^4.0.0"
+  }
+}
+
+
+
+
+
+
+
+
+1) após upload, talvez arquivos com espaços podem está causando um erro "Error: Malformed UTF-8 data"
+2) limite 2Gb também no backend python
+
+
+
+1) executar tudo numa requisição
+- converter e transcrever
+
+verificar tempo total para evitar timout no HTTP do cloud run
+
+
+
+
+
+
+
+
+converter e transcrever (usa o python tanto para converter formatos de áudio como também para fazer logo a transcrição)
+
+1) assim que fizer upload no Store, o gatilho vai enviar uma request contendo nome do arquivo
+2) essa request vai para o cloud task que em seguida vai enviar 
+
+
+
+1) após finalizar upload no front, o próprio front executa uma segunda request direto no cloud run
+upload -> storage -> ok
+			|
+			|
+			----> segunda request cloud run
+							|
+							|
+							---> cloud run converte formato e depois realiza o speech
+							- após finalizar, faz alteração no firestore também
+							- se o usuário ficar aguardando, vai receber resposta de evento do firestore
+							- enquanto não recebe a resposta, fica o CircularLoad no Material-UI, 
+							se ele recarregar a página depois já vai ser com o firebase atualizado
+							- ele recebe email de qualquer forma
