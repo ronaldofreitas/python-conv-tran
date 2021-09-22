@@ -48,8 +48,10 @@ def receive():
     converted_file = s.set_channels(1).set_frame_rate(16000) #taxa de amostragem = biterate / framerate
     converted_file.export(destname, bitrate="16k", format="flac") #codec sem perdas = FLAC
 
-    blob = bucket_destino.blob(foldername+'/'+index_manticore+'/'+file_id+'/'+destname+'/'+idioma)
+    blob = bucket_destino.blob(foldername+'/'+index_manticore+'/'+file_id+'/'+destname)
     blob.upload_from_filename(destname)
+    blob.metadata = {'x-goog-meta-item-idiom': idioma}
+    blob.patch()
 
     blob_del = bucket_origem_apagar.delete_blob(foldername+'/'+file_name_uri)
 
