@@ -53,7 +53,7 @@ def receive():
     blob.metadata = {'x-goog-meta-item-idiom': idioma}
     blob.patch()
 
-    blob_del = bucket_origem_apagar.delete_blob(foldername+'/'+file_name_uri)
+    #blob_del = bucket_origem_apagar.delete_blob(foldername+'/'+file_name_uri)
 
     return "ok"
 
