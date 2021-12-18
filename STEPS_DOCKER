@@ -9,7 +9,7 @@ docker build -t ronaldofreitas/conv-tran .
 
 pega o ID da imagem... docker images
 
-docker tag 56075e30fd9f gcr.io/catalobyte-311413/catalobyte/conv-tran && docker push gcr.io/catalobyte-311413/catalobyte/conv-tran
+docker tag e2a1f641d042 gcr.io/catalobyte-311413/catalobyte/conv-tran && docker push gcr.io/catalobyte-311413/catalobyte/conv-tran
 
 
 

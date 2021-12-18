@@ -17,6 +17,7 @@ def receive():
     foldername = data['foldername'] # firebase user uid
     file_id = data['file_id']
     idioma = data['idioma']
+    trad_idom = data['idiotrad']
     full_path_uri = gs_uri.split('/')
     file_name_uri = full_path_uri[-1] # nome completo do arquivo
     nma = file_name_uri.split('-')
@@ -25,19 +26,7 @@ def receive():
     # ATENÇÃO! só funciona uma chamada por vez, mais de uma chamada ao mesmo tempo pode apagar tudo dos demais
     tempfile = "temp.flac"
     destname = samefile+".flac"
-    
-    '''
-    dirdest = "./output/"
-    dst = dirdest+destname
-    for root, dirs, files in os.walk(dirdest, topdown=False):
-        for name in files:
-            os.remove(os.path.join(root, name))
-        for name in dirs:
-            os.rmdir(os.path.join(root, name))
 
-    os.mknod(file_name_uri) # arquivo em root
-    os.mknod(dst) # 
-    '''
     if not os.path.exists(tempfile):
         os.mknod(tempfile)
     with open(tempfile, 'wb+') as file_obj:
@@ -50,10 +39,10 @@ def receive():
 
     blob = bucket_destino.blob(foldername+'/'+index_manticore+'/'+file_id+'/'+destname)
     blob.upload_from_filename(destname)
-    blob.metadata = {'x-goog-meta-item-idiom': idioma}
+    blob.metadata = {'x-goog-meta-item-idiom': idioma, 'x-goog-meta-item-trad': trad_idom}
     blob.patch()
 
-    blob_del = bucket_origem_apagar.delete_blob(foldername+'/'+file_name_uri)
+    bucket_origem_apagar.delete_blob(foldername+'/'+file_name_uri)
 
     return "ok"
 
